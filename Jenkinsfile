@@ -1,7 +1,7 @@
 pipeline {
     agent any 
     environment {
-    DOCKERHUB_CREDENTIALS = credentials('valaxy-dockerhub')
+    DOCKERHUB_CREDENTIALS = credentials('nodejs')
     }
     stages { 
         stage('SCM Checkout') {
@@ -9,10 +9,23 @@ pipeline {
             git 'https://github.com/ravdy/nodejs-demo.git'
             }
         }
+    
+        stage('Build') {
+            steps {
+                 sh 'npm install'
+            }
+        }
+
+        stage('Approval ') {
+            steps {
+                input "deploy proceed?"
+                }
+        }
+
 
         stage('Build docker image') {
             steps {  
-                sh 'docker build -t valaxy/nodeapp:$BUILD_NUMBER .'
+                sh 'docker build -t vikash456/nodejs .'
             }
         }
         stage('login to dockerhub') {
@@ -22,14 +35,18 @@ pipeline {
         }
         stage('push image') {
             steps{
-                sh 'docker push valaxy/nodeapp:$BUILD_NUMBER'
+                sh 'docker push vikash456/nodejs'
             }
         }
-}
-post {
-        always {
-            sh 'docker logout'
+        stage('Prod branch') {
+
+            steps{
+                script {
+                    sh "docker run -d -p 3000:8080 --name nodejs-container nodejs"
+                    }
+                }
+            }
         }
-    }
+
 }
 
